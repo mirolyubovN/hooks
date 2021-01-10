@@ -16,7 +16,8 @@ const App = () => {
 					Hide
 				</button>
 				{/* <ClassCounter value={value}/> */}
-				<HookCounter value={value}/>
+				{/* <HookCounter value={value}/> */}
+				<Notification/>
 			</div>
 			);
 	} else {
@@ -29,8 +30,14 @@ const HookCounter = ({value}) => {
 	
 	useEffect(() => {
 		console.log('useEffect');
-		return () => console.log('clear');
-	}, [value]);
+		return () => console.log('clear'); // clears effect
+	}, [value]); // only reacts on value change (like componentDidUpdate)
+
+	useEffect(() => {
+		console.log('useEffect: mounted');
+	}, []); // only executes when component is mounted (like componentDidMount)
+	
+	useEffect(() => () => console.log('useEffect: UNmounted'), []); // only executes when component is unmounted (like componentWillUnmount)
 
 	return (
 		<p>{value}</p>
@@ -50,6 +57,24 @@ class ClassCounter extends Component {
 	render() {
 		return <p>{this.props.value}</p>
 	};
+};
+
+const Notification = () => {
+
+	const [visible, setVisible] = useState(true);
+
+	useEffect(() => {
+		const timeout = setTimeout(() => {
+			setVisible(false);
+		}, 2000);
+		return () => clearTimeout(timeout);
+	}, [])
+
+	return (
+		<div>
+			{visible &&	<p>Hello</p>}
+		</div>
+	)
 };
 
 ReactDOM.render(
