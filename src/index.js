@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 
 
 const App = () => {
-	const [value, setValue] = useState(0);
+	const [value, setValue] = useState(1);
 	const [visible, setVisible] = useState(true);
 
 	if(visible) {
@@ -15,9 +15,7 @@ const App = () => {
 				<button onClick={() => setVisible(false)}>
 					Hide
 				</button>
-				{/* <ClassCounter value={value}/> */}
-				{/* <HookCounter value={value}/> */}
-				<Notification/>
+				<PlanetInfo id={value}/>
 			</div>
 			);
 	} else {
@@ -26,56 +24,24 @@ const App = () => {
 	
 }
 
-const HookCounter = ({value}) => {
-	
-	useEffect(() => {
-		console.log('useEffect');
-		return () => console.log('clear'); // clears effect
-	}, [value]); // only reacts on value change (like componentDidUpdate)
+const PlanetInfo = ({id}) => {
+
+	const [name, setName] = useState(null);
 
 	useEffect(() => {
-		console.log('useEffect: mounted');
-	}, []); // only executes when component is mounted (like componentDidMount)
-	
-	useEffect(() => () => console.log('useEffect: UNmounted'), []); // only executes when component is unmounted (like componentWillUnmount)
+		let cancelled = false;
+		fetch(`https://swapi.dev/api/planets/${id}`)
+			.then(res => res.json())
+			.then(data => !cancelled && setName(data.name)) //do not set new state if the effect has been cleared
+			.catch(() => console.log('network error'));
+		return () => cancelled = true; 
+	}, [id]);
+
 
 	return (
-		<p>{value}</p>
-	);
-};
-
-class ClassCounter extends Component {
-	componentDidMount() {
-		console.log('class: mount');
-	}
-	componentDidUpdate() {
-		console.log('class: update');
-	}
-	componentWillUnmount() {
-		console.log('class: unmount');
-	}
-	render() {
-		return <p>{this.props.value}</p>
-	};
-};
-
-const Notification = () => {
-
-	const [visible, setVisible] = useState(true);
-
-	useEffect(() => {
-		const timeout = setTimeout(() => {
-			setVisible(false);
-		}, 2000);
-		return () => clearTimeout(timeout);
-	}, [])
-
-	return (
-		<div>
-			{visible &&	<p>Hello</p>}
-		</div>
+		<div>{id} - {name}</div>
 	)
-};
+}
 
 ReactDOM.render(
 	<App />,
