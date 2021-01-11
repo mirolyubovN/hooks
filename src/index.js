@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback, useMemo} from 'react';
 import ReactDOM from 'react-dom';
 
 
@@ -24,27 +24,62 @@ const App = () => {
 	
 }
 
-const usePlanetInfo = id => {
-	const [name, setName] = useState(null);
+const getPlanet = id => {
+	return fetch(`https://swapi.dev/api/planets/${id}`)
+			.then(res => res.json())
+			.then(data => data);
+
+}
+
+const useRequest = request => {
+
+	const initialState = useMemo(() => ({
+		data: null, 
+		loading: true,
+		error: null
+	}), []);
+	const [dataState, setDataState] = useState(initialState);
 
 	useEffect(() => {
-		let cancelled = false;
-		fetch(`https://swapi.dev/api/planets/${id}`)
-			.then(res => res.json())
-			.then(data => !cancelled && setName(data.name)) //do not set new state if the effect has been cleared
-			.catch(() => console.log('network error'));
-		return () => cancelled = true; 
-	}, [id]);
+		setDataState(initialState);
 
-	return name;
+		let cancelled = false;
+
+		request()
+			.then(data => !cancelled && setDataState({
+				data, 
+				loading: false,
+				error: null
+			})) //do not set new state if the effect has been cleared
+			.catch(e => !cancelled && setDataState({
+				data: null, 
+				loading: false,
+				error: e
+			}));
+		return () => cancelled = true; 
+	}, [request, initialState]);
+
+	return dataState;
+}
+
+const usePlanetInfo = id => {
+	const request = useCallback(() => getPlanet(id), [id]);
+	
+	return useRequest(request);
 }
 
 const PlanetInfo = ({id}) => {
 
-	const name = usePlanetInfo(id);
+	const {data, loading, error} = usePlanetInfo(id);
 
+	if(error) {
+		return <div>Something is wrong. Error message: {error}</div>;
+	}
+	if(loading) {
+		return <div>Loading...</div>;
+	}
 	return (
-		<div>{id} - {name}</div>
+		<div>{id} - {data && data.name}</div>
 	)
 }
 
